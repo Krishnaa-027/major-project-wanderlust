@@ -131,24 +131,38 @@ module.exports.editListing = async(req,res)=>{
 };
 
 
-module.exports.updateListing = async(req,res)=>{
-    // if(!req.body.listing){
-    //     throw new ExpressError(400,"Send valid data for Listing.");
-    // }
-    let {id} = req.params;
-    let listing = await Listing.findByIdAndUpdate(id,{...req.body.listing});
 
-    // for image upload
-    if(typeof req.file !== "undefined"){
-        let url = req.file.path;
-        let filename = req.file.filename;
-        listing.image = {url,filename};
-        await listing.save();
+module.exports.updateListing = async (req, res) => {
+  try {
+    let { id } = req.params;
+    let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing }, { new: true });
+
+    // Update geometry if location changed
+    const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
+    const coordinates = await geocode(fullLocation);
+
+    if (coordinates) {
+      listing.geometry = {
+        type: "Point",
+        coordinates: [coordinates.lng, coordinates.lat],
+      };
     }
-    
-    // res.redirect("/listings");
-        req.flash("success", "This Listing is Updated Successfully!");
+
+    //  Update image if new file uploaded
+    if (typeof req.file !== "undefined") {
+      let url = req.file.path;
+      let filename = req.file.filename;
+      listing.image = { url, filename };
+    }
+
+    await listing.save();
+    req.flash("success", "This Listing is Updated Successfully!");
     res.redirect(`/listings/${id}`);
+  } catch (err) {
+    console.error("Error updating listing:", err);
+    req.flash("error", "Something went wrong while updating the listing.");
+    res.redirect("/listings");
+  }
 };
 
 
