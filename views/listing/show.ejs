@@ -86,7 +86,7 @@
                                     <!-- <p class="card-text"><%= review.rating%>⭐</p> -->
                                  </div>
 
-                                 <% if (currentUser && review.author && review.author._id.equals(currentUser._id)) { %>
+                                 <% if (currUser && review.author && review.author._id.equals(currUser._id)) { %>
                                  <form class="reviewDel" method="POST" action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE">
                                     <button class="mt-2 btn btn-sm btn-dark">Delete</button>
                                  </form>
