@@ -83,7 +83,7 @@ module.exports.createListing = async (req,res,next) =>{
 
     // 2️⃣ Geocode location
     const coordinates = await geocode(fullLocation);
-    console.log("Geocode result:", coordinates); // ✅ Check API output
+    console.log("Geocode result:", coordinates); //  Check API output
 
     const newlisting = new Listing(req.body.listing);
     newlisting.owner = req.user._id;
@@ -97,7 +97,7 @@ module.exports.createListing = async (req,res,next) =>{
         : [77.209, 28.6139] // default Delhi
     };
 
-    console.log("Listing geometry before save:", newlisting.geometry); // ✅ Confirm before saving
+    console.log("Listing geometry before save:", newlisting.geometry); //  Confirm before saving
 
     // 4️⃣ Save to DB
     await newlisting.save();
