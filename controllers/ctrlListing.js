@@ -71,43 +71,39 @@ module.exports.showListing = async (req,res) =>{
 // };
 
 
-module.exports.createListing = async (req,res,next) =>{
-  try { 
+module.exports.createListing = async (req, res, next) => {
+  try {
     let url = req.file.path;
     let filename = req.file.filename;
 
-    // 1️⃣ Get location from form
-    // const location = req.body.listing.location;
+    // 1️⃣ Build full location string
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
+    console.log("Full Location:", fullLocation);
 
-    // DEBUG LOGS
-    console.log(" CREATE FORM DATA:", req.body.listing);
-    console.log(" FULL LOCATION SENT TO API:", fullLocation);
-
-
-    // 2️⃣ Geocode location
+    // 2️⃣ Get coordinates using geocode.js
     const coordinates = await geocode(fullLocation);
-    console.log("Geocode result:", coordinates); //  Check API output
+    console.log("Coordinates:", coordinates);
 
+    // 3️⃣ Create listing
     const newlisting = new Listing(req.body.listing);
     newlisting.owner = req.user._id;
-    newlisting.image = {url, filename};
+    newlisting.image = { url, filename };
 
-    // 3️⃣ Assign geometry
+    // 4️⃣ Save geometry (fallback if null)
     newlisting.geometry = {
       type: "Point",
       coordinates: coordinates
         ? [coordinates.lng, coordinates.lat]
-        : [77.209, 28.6139] // default Delhi
+        : [77.2090, 28.6139] // default Delhi
     };
 
-    console.log("Listing geometry before save:", newlisting.geometry); //  Confirm before saving
+    console.log("Geometry before Save:", newlisting.geometry);
 
-    // 4️⃣ Save to DB
     await newlisting.save();
 
     req.flash("success", "New Listing is Created!");
     res.redirect("/listings");
+
   } catch (err) {
     console.error("Error creating listing:", err);
     req.flash("error", "Something went wrong while creating the listing.");
@@ -177,31 +173,38 @@ module.exports.editListing = async(req,res)=>{
 
 module.exports.updateListing = async (req, res) => {
   try {
-    let { id } = req.params;
+    const { id } = req.params;
 
-    // Clean inputs
+    // 1️⃣ Clean inputs
     req.body.listing.location = req.body.listing.location.trim();
     req.body.listing.country = req.body.listing.country.trim();
 
-    // Update normal fields
-    let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing }, { new: true });
+    // 2️⃣ Update basic fields first
+    let listing = await Listing.findByIdAndUpdate(
+      id,
+      { ...req.body.listing },
+      { new: true }
+    );
 
-    // Geocode updated location
+    // 3️⃣ Prepare location for geocoding
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
-    // DEBUG LOGS
-    console.log("📌 UPDATE FORM DATA:", req.body.listing);
-    console.log("📌 FULL LOCATION SENT TO API:", fullLocation);
-    const coordinates = await geocode(fullLocation);
 
-    //  IMPORTANT FIX: Agar geocode null ho to default Delhi daal do (same as create)
+    console.log("UPDATE FORM DATA:", req.body.listing);
+    console.log("FULL LOCATION SENT TO API:", fullLocation);
+
+    // 4️⃣ Try to geocode new location
+    const coordinates = await geocode(fullLocation);
+    console.log("Geocode result:", coordinates);
+
+    // 5️⃣ Update geometry
     listing.geometry = {
       type: "Point",
       coordinates: coordinates
-        ? [coordinates.lng, coordinates.lat]
-        : [77.209, 28.6139]
+        ? [coordinates.lng, coordinates.lat] // correct order: lng, lat
+        : [77.209, 28.6139] // fallback: Delhi
     };
 
-    // Update image
+    // 6️⃣ Update image (if new uploaded)
     if (req.file) {
       listing.image = {
         url: req.file.path,
@@ -209,7 +212,9 @@ module.exports.updateListing = async (req, res) => {
       };
     }
 
+    // 7️⃣ Save updated listing
     await listing.save();
+
     req.flash("success", "This Listing is Updated Successfully!");
     res.redirect(`/listings/${id}`);
 
@@ -219,6 +224,7 @@ module.exports.updateListing = async (req, res) => {
     res.redirect("/listings");
   }
 };
+
 
 
 module.exports.deleteListing = async(req,res)=>{
