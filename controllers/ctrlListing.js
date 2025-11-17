@@ -135,13 +135,17 @@ module.exports.editListing = async(req,res)=>{
 module.exports.updateListing = async (req, res) => {
   try {
     let { id } = req.params;
+
+    // STEP 1: Remove extra spaces
+    req.body.listing.location = req.body.listing.location.trim();
+    req.body.listing.country = req.body.listing.country.trim();
+
+    // STEP 2: Update listing basic fields
     let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing }, { new: true });
 
-    // Update geometry if location changed
+    //  STEP 3: Update geometry
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
-    console.log("FULL LOCATION:", fullLocation);
     const coordinates = await geocode(fullLocation);
-    console.log("GEOCODE RESULT:", coordinates);
 
     if (coordinates) {
       listing.geometry = {
@@ -150,7 +154,7 @@ module.exports.updateListing = async (req, res) => {
       };
     }
 
-    //  Update image if new file uploaded
+    //  STEP 4: Update image if new file uploaded
     if (typeof req.file !== "undefined") {
       let url = req.file.path;
       let filename = req.file.filename;
