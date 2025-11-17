@@ -80,6 +80,10 @@ module.exports.createListing = async (req,res,next) =>{
     // const location = req.body.listing.location;
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
 
+    // DEBUG LOGS
+    console.log(" CREATE FORM DATA:", req.body.listing);
+    console.log(" FULL LOCATION SENT TO API:", fullLocation);
+
 
     // 2️⃣ Geocode location
     const coordinates = await geocode(fullLocation);
@@ -184,6 +188,9 @@ module.exports.updateListing = async (req, res) => {
 
     // Geocode updated location
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
+    // DEBUG LOGS
+    console.log("📌 UPDATE FORM DATA:", req.body.listing);
+    console.log("📌 FULL LOCATION SENT TO API:", fullLocation);
     const coordinates = await geocode(fullLocation);
 
     //  IMPORTANT FIX: Agar geocode null ho to default Delhi daal do (same as create)

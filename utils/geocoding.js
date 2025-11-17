@@ -30,6 +30,7 @@
 const axios = require("axios");
 
 async function geocode(location) {
+  console.log("🌍 Calling Geocode API for:", location);
   const url = `https://geocode.maps.co/search?q=${encodeURIComponent(location)}`;
 
   try {
