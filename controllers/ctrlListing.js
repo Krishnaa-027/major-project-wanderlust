@@ -139,7 +139,9 @@ module.exports.updateListing = async (req, res) => {
 
     // Update geometry if location changed
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
+    console.log("FULL LOCATION:", fullLocation);
     const coordinates = await geocode(fullLocation);
+    console.log("GEOCODE RESULT:", coordinates);
 
     if (coordinates) {
       listing.geometry = {
