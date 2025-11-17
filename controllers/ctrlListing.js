@@ -132,38 +132,80 @@ module.exports.editListing = async(req,res)=>{
 
 
 
+// module.exports.updateListing = async (req, res) => {
+//   try {
+//     let { id } = req.params;
+
+//     // STEP 1: Remove extra spaces
+//     req.body.listing.location = req.body.listing.location.trim();
+//     req.body.listing.country = req.body.listing.country.trim();
+
+//     // STEP 2: Update listing basic fields
+//     let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing }, { new: true });
+
+//     //  STEP 3: Update geometry
+//     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
+//     const coordinates = await geocode(fullLocation);
+
+//     if (coordinates) {
+//       listing.geometry = {
+//         type: "Point",
+//         coordinates: [coordinates.lng, coordinates.lat],
+//       };
+//     }
+
+//     //  STEP 4: Update image if new file uploaded
+//     if (typeof req.file !== "undefined") {
+//       let url = req.file.path;
+//       let filename = req.file.filename;
+//       listing.image = { url, filename };
+//     }
+
+//     await listing.save();
+//     req.flash("success", "This Listing is Updated Successfully!");
+//     res.redirect(`/listings/${id}`);
+//   } catch (err) {
+//     console.error("Error updating listing:", err);
+//     req.flash("error", "Something went wrong while updating the listing.");
+//     res.redirect("/listings");
+//   }
+// };
+
 module.exports.updateListing = async (req, res) => {
   try {
     let { id } = req.params;
 
-    // STEP 1: Remove extra spaces
+    // Clean inputs
     req.body.listing.location = req.body.listing.location.trim();
     req.body.listing.country = req.body.listing.country.trim();
 
-    // STEP 2: Update listing basic fields
+    // Update normal fields
     let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing }, { new: true });
 
-    //  STEP 3: Update geometry
+    // Geocode updated location
     const fullLocation = `${req.body.listing.location}, ${req.body.listing.country}`;
     const coordinates = await geocode(fullLocation);
 
-    if (coordinates) {
-      listing.geometry = {
-        type: "Point",
-        coordinates: [coordinates.lng, coordinates.lat],
-      };
-    }
+    //  IMPORTANT FIX: Agar geocode null ho to default Delhi daal do (same as create)
+    listing.geometry = {
+      type: "Point",
+      coordinates: coordinates
+        ? [coordinates.lng, coordinates.lat]
+        : [77.209, 28.6139]
+    };
 
-    //  STEP 4: Update image if new file uploaded
-    if (typeof req.file !== "undefined") {
-      let url = req.file.path;
-      let filename = req.file.filename;
-      listing.image = { url, filename };
+    // Update image
+    if (req.file) {
+      listing.image = {
+        url: req.file.path,
+        filename: req.file.filename
+      };
     }
 
     await listing.save();
     req.flash("success", "This Listing is Updated Successfully!");
     res.redirect(`/listings/${id}`);
+
   } catch (err) {
     console.error("Error updating listing:", err);
     req.flash("error", "Something went wrong while updating the listing.");
